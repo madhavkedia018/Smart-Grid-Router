@@ -19,28 +19,28 @@ The project uses an extended Dijkstra’s algorithm to find optimal paths across
 
 ### Core Capabilities
 
-1. Multi-Layer Routing Grid
+* Multi-Layer Routing Grid
   - Supports arbitrary number of layers, rows, and columns
   - Each cell on each layer has an independent cost
 
-2. Multi-Net Routing Support
+* Multi-Net Routing Support
   - Takes user-defined source and target for each net
   - Uses grid cell blocking to prevent overlaps between nets
 
-3. Via Modeling
+* Via Modeling
   - Vias enable vertical connections between adjacent layers
   - Cost of via transitions is customizable
   - Vias span all layers at fixed (x, y) positions
 
-4. 3D Dijkstra’s Algorithm
+* 3D Dijkstra’s Algorithm
   - Finds cost-optimal paths through cells and layers
   - Supports combined via and intra-layer movements
 
-5. ASCII-Based Visualization
+* ASCII-Based Visualization
   - Layer-by-layer terminal visualization of routed nets
   - Each net assigned a unique character (A, B, C, ...)
 
-6. Blockage Handling
+* Blockage Handling
   - Blocks cells already used by routed nets to avoid conflicts
 
 ---
