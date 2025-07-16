@@ -33,7 +33,7 @@ bool isValid(int x, int y, int rows, int cols) {
 
 vector<tuple<int, int, int>> dijkstra3D(
     const vector<vector<vector<int>>>& grid,
-    const vector<vector<vector<bool>>>& vias,
+    const vector<vector<bool>>& hasVia,
     const vector<vector<vector<bool>>>& blocked,
     tuple<int, int, int> start,
     tuple<int, int, int> target
@@ -73,12 +73,23 @@ vector<tuple<int, int, int>> dijkstra3D(
             }
         }
 
-        if (l + 1 < layers && vias[x][y][l] && !blocked[l + 1][x][y]) {
-            int newCost = dist[l][x][y] + VIA_COST + grid[l + 1][x][y];
-            if (newCost < dist[l + 1][x][y]) {
-                dist[l + 1][x][y] = newCost;
-                parent[l + 1][x][y] = {x, y, l};
-                pq.push(Node(x, y, l + 1, newCost));
+        // Via transitions (stacked vias: available at (x,y) across all layers)
+        if (hasVia[x][y]) {
+            if (l + 1 < layers && !blocked[l + 1][x][y]) {
+                int newCost = dist[l][x][y] + VIA_COST + grid[l + 1][x][y];
+                if (newCost < dist[l + 1][x][y]) {
+                    dist[l + 1][x][y] = newCost;
+                    parent[l + 1][x][y] = {x, y, l};
+                    pq.push(Node(x, y, l + 1, newCost));
+                }
+            }
+            if (l - 1 >= 0 && !blocked[l - 1][x][y]) {
+                int newCost = dist[l][x][y] + VIA_COST + grid[l - 1][x][y];
+                if (newCost < dist[l - 1][x][y]) {
+                    dist[l - 1][x][y] = newCost;
+                    parent[l - 1][x][y] = {x, y, l};
+                    pq.push(Node(x, y, l - 1, newCost));
+                }
             }
         }
     }
@@ -122,26 +133,41 @@ void printGridLayers(const vector<vector<vector<char>>>& layout, int layers) {
 }
 
 int main() {
-    int rows = 4, cols = 4, layers = 2;
+    int rows = 6, cols = 6, layers = 3;
 
     vector<vector<vector<int>>> grid = {
         {
-            {1, 1, 1, 1},
-            {1, 5, 5, 1},
-            {1, 1, 1, 1},
-            {1, 1, 1, 1}
+            {1, 2, 3, 4,5,1},
+            {3, 6, 5, 2,2,1},
+            {2, 1, 1, 7,6,3},
+            {1, 4, 2, 3,1,3},
+            {4, 1, 1, 9,6,1},
+            {1, 3, 4, 3,2,5}
         },
         {
-            {1, 1, 1, 1},
-            {1, 1, 1, 1},
-            {1, 1, 2, 1},
-            {1, 1, 1, 1}
+            {3, 2, 1, 4,3,5},
+            {1, 3, 1, 5,2,6},
+            {1, 4, 2, 1,1,2},
+            {2, 1, 1, 1,7,3},
+            {1, 4, 2, 1,3,2},
+            {1, 5, 6, 1,7,3}
+        },
+        {
+            {1, 4, 1, 1,3,1},
+            {2, 1, 2, 1,2,2},
+            {1, 1, 2, 1,4,1},
+            {1, 2, 3, 1,3,1},
+            {5, 6, 3, 1,4,1},
+            {5, 1, 2, 1,3,1}
         }
     };
 
-    vector<vector<vector<bool>>> vias(rows, vector<vector<bool>>(cols, vector<bool>(layers, false)));
-    vias[1][1][0] = true;
-    vias[2][2][0] = true;
+    // Vias: stacked, accessible at all layers for a given (x, y)
+    vector<vector<bool>> hasVia(rows, vector<bool>(cols, false));
+    hasVia[1][1] = true;
+    hasVia[2][2] = true;
+    hasVia[3][3] = true;
+    hasVia[4][4] = true;
 
     vector<vector<vector<bool>>> blocked(layers, vector<vector<bool>>(rows, vector<bool>(cols, false)));
     vector<vector<vector<char>>> layout(layers, vector<vector<char>>(rows, vector<char>(cols, '.')));
@@ -177,7 +203,7 @@ int main() {
         char symbol = (i < SYMBOLS.size()) ? SYMBOLS[i] : '*';
         cout << "\nRouting " << net.name << "...\n";
 
-        auto path = dijkstra3D(grid, vias, blocked, net.start, net.target);
+        auto path = dijkstra3D(grid, hasVia, blocked, net.start, net.target);
 
         if (path.empty()) {
             cout << "No path found for " << net.name << "!\n";
