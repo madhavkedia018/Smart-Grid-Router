@@ -83,21 +83,21 @@ Layer 1:
 
 ## Future Scope
 
-- [] Optimized Routing Scheduler
+- [ ] Optimized Routing Scheduler
   - Prioritize nets to maximize the number of successfully routed connections
   - Apply greedy heuristics or backtracking to reduce cost while maximizing routability
 
-- [] File I/O Support
+- [ ] File I/O Support
   - Load cell costs, vias, and netlists from external files
   - Export routed grid to a layout or JSON format
 
-- [] Obstacle Modeling
+- [ ] Obstacle Modeling
   - Add user-defined obstacles and reserved areas within layers
 
-- [] Graphical Visualization
+- [ ] Graphical Visualization
   - Interactive GUI or Web-based visualizer for better debugging
 
-- [] Routing Statistics Report
+- [ ] Routing Statistics Report
   - Number of vias used, total path length, average cost per net
 
 
