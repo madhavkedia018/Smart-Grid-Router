@@ -170,6 +170,8 @@ int main() {
         nets.push_back(net);
     }
 
+    int totalRoutingCost = 0;
+
     for (int i = 0; i < nets.size(); ++i) {
         auto& net = nets[i];
         char symbol = (i < SYMBOLS.size()) ? SYMBOLS[i] : '*';
@@ -183,8 +185,9 @@ int main() {
         }
 
         int cost = computeTotalCost(path, grid);
-        cout << net.name << " routed with cost " << cost << ":\n";
+        totalRoutingCost += cost;
 
+        cout << net.name << " routed with cost " << cost << ":\n";
         for (auto [x, y, l] : path) {
             blocked[l][x][y] = true;
             layout[l][x][y] = symbol;
@@ -194,6 +197,8 @@ int main() {
     }
 
     printGridLayers(layout, layers);
+
+    cout << "\n✅ Total Routing Cost across all nets: " << totalRoutingCost << endl;
 
     return 0;
 }
