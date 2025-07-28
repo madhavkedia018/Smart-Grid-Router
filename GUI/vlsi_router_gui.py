@@ -106,22 +106,40 @@ def compute_cost(path):
     return cost
 
 def route_nets_permutation(nets):
-    best_result = {"cost": INF, "routed": 0, "paths": []}
+    best_result = {
+        "cost": INF,
+        "routed": 0,
+        "paths": [],
+        "order": []
+    }
+
     for perm in itertools.permutations(nets):
         blocked = [[[False]*COLS for _ in range(ROWS)] for _ in range(LAYERS)]
         paths = []
         total_cost = 0
+        routed_count = 0
+
         for net in perm:
             path = dijkstra3D(net["start"], net["end"], blocked)
             if not path:
-                break
+                continue  # Skip unrouteable net
             for x, y, l in path:
                 blocked[l][x][y] = True
             total_cost += compute_cost(path)
             paths.append((net["name"], path))
-        if len(paths) > best_result["routed"] or (len(paths) == best_result["routed"] and total_cost < best_result["cost"]):
-            best_result = {"cost": total_cost, "routed": len(paths), "paths": paths}
+            routed_count += 1
+
+        if (routed_count > best_result["routed"]) or \
+           (routed_count == best_result["routed"] and total_cost < best_result["cost"]):
+            best_result = {
+                "cost": total_cost,
+                "routed": routed_count,
+                "paths": paths,
+                "order": [net["name"] for net in perm]
+            }
+
     return best_result
+
 
 def visualize(paths):
     fig, axs = plt.subplots(1, LAYERS, figsize=(15, 5))
@@ -160,7 +178,10 @@ def main_gui():
             messagebox.showinfo("Info", "No nets to route")
             return
         result = route_nets_permutation(nets)
-        messagebox.showinfo("Routing Complete", f"Routed {result['routed']} nets with total cost {result['cost']}")
+        messagebox.showinfo("Routing Complete", 
+        f"Routed {result['routed']} nets with total cost {result['cost']}\n"
+        f"Best order: {', '.join(result['order'])}"
+    )
         visualize(result["paths"])
 
     root = tk.Tk()
