@@ -39,6 +39,15 @@ struct RoutedNetInfo {
     char symbol;
 };
 
+struct DirNode {
+    int x, y, layer, cost;
+    int px, py, pl; // previous x,y,layer to compute direction change
+    DirNode(int _x, int _y, int _layer, int _cost, int _px, int _py, int _pl)
+        : x(_x), y(_y), layer(_layer), cost(_cost), px(_px), py(_py), pl(_pl) {}
+    bool operator>(const DirNode& other) const {
+        return cost > other.cost;
+    }
+};
 
 bool isValid(int x, int y, int rows, int cols) {
     return x >= 0 && y >= 0 && x < rows && y < cols;
@@ -63,37 +72,45 @@ vector<tuple<int, int, int>> dijkstra3D(
         return {};
 
     dist[sl][sx][sy] = grid[sl][sx][sy];
-    priority_queue<Node, vector<Node>, greater<Node>> pq;
-    pq.push(Node(sx, sy, sl, grid[sl][sx][sy]));
+    priority_queue<DirNode, vector<DirNode>, greater<DirNode>> pq;
+    pq.push(DirNode(sx, sy, sl, grid[sl][sx][sy], sx, sy, sl));
 
     vector<pair<int, int>> directions = {{0,1},{1,0},{-1,0},{0,-1}};
 
     while (!pq.empty()) {
-        Node current = pq.top(); pq.pop();
+        DirNode current = pq.top(); pq.pop();
         int x = current.x, y = current.y, l = current.layer;
 
         if (make_tuple(x, y, l) == target) break;
 
-        for (auto dir : directions) {
-            int nx = x + dir.first, ny = y + dir.second;
+        for (auto [dx, dy] : directions) {
+            int nx = x + dx, ny = y + dy;
             if (isValid(nx, ny, rows, cols) && !blocked[l][nx][ny]) {
-                int newCost = dist[l][x][y] + grid[l][nx][ny];
-                if (newCost < dist[l][nx][ny]) {
-                    dist[l][nx][ny] = newCost;
+                int baseCost = dist[l][x][y] + grid[l][nx][ny];
+
+                // Check for turn
+                int prev_dx = x - current.px;
+                int prev_dy = y - current.py;
+                if (make_pair(dx, dy) != make_pair(prev_dx, prev_dy)) {
+                    baseCost += TURN_PENALTY;
+                }
+
+                if (baseCost < dist[l][nx][ny]) {
+                    dist[l][nx][ny] = baseCost;
                     parent[l][nx][ny] = {x, y, l};
-                    pq.push(Node(nx, ny, l, newCost));
+                    pq.push(DirNode(nx, ny, l, baseCost, x, y, l));
                 }
             }
         }
 
-        // Via transitions (stacked vias: available at (x,y) across all layers)
+        // Via transitions
         if (hasVia[x][y]) {
             if (l + 1 < layers && !blocked[l + 1][x][y]) {
                 int newCost = dist[l][x][y] + VIA_COST + grid[l + 1][x][y];
                 if (newCost < dist[l + 1][x][y]) {
                     dist[l + 1][x][y] = newCost;
                     parent[l + 1][x][y] = {x, y, l};
-                    pq.push(Node(x, y, l + 1, newCost));
+                    pq.push(DirNode(x, y, l + 1, newCost, x, y, l));
                 }
             }
             if (l - 1 >= 0 && !blocked[l - 1][x][y]) {
@@ -101,7 +118,7 @@ vector<tuple<int, int, int>> dijkstra3D(
                 if (newCost < dist[l - 1][x][y]) {
                     dist[l - 1][x][y] = newCost;
                     parent[l - 1][x][y] = {x, y, l};
-                    pq.push(Node(x, y, l - 1, newCost));
+                    pq.push(DirNode(x, y, l - 1, newCost, x, y, l));
                 }
             }
         }
@@ -272,7 +289,7 @@ int main() {
     
         printGridLayers(bestLayout, layers);
 
-    cout << "\n Routed " << bestRouted << " nets with total cost: " << minCost << "\n\n";
+    cout << "\n✅ Routed " << bestRouted << " nets with total cost: " << minCost << "\n\n";
 
     return 0;
 }
