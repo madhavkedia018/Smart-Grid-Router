@@ -7,12 +7,14 @@
 #include <string>
 #include <set>
 #include <chrono>
+#include <random>
 #include <iomanip>
 
 using namespace std;
 
 const int INF = INT_MAX;
-const int VIA_COST = 20;
+const int VIA_COST = 50;
+const int TURN_PENALTY = 10;
 const string SYMBOLS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 struct Node {
@@ -36,6 +38,7 @@ struct RoutedNetInfo {
     int cost;
     char symbol;
 };
+
 
 bool isValid(int x, int y, int rows, int cols) {
     return x >= 0 && y >= 0 && x < rows && y < cols;
@@ -144,40 +147,29 @@ void printGridLayers(const vector<vector<vector<char>>>& layout, int layers) {
 
 
 int main() {
-    int rows = 6, cols = 6, layers = 3;
+    int rows = 10, cols = 10, layers = 7;
 
-    vector<vector<vector<int>>> grid = {
-        {
-            {1, 2, 3, 4, 5, 1},
-            {3, 6, 5, 2, 2, 1},
-            {2, 1, 1, 7, 6, 3},
-            {1, 4, 2, 3, 1, 3},
-            {4, 1, 1, 9, 6, 1},
-            {1, 3, 4, 3, 2, 5}
-        },
-        {
-            {3, 2, 1, 4, 3, 5},
-            {1, 3, 1, 5, 2, 6},
-            {1, 4, 2, 1, 1, 2},
-            {2, 1, 1, 1, 7, 3},
-            {1, 4, 2, 1, 3, 2},
-            {1, 5, 6, 1, 7, 3}
-        },
-        {
-            {1, 4, 1, 1, 3, 1},
-            {2, 1, 2, 1, 2, 2},
-            {1, 1, 2, 1, 4, 1},
-            {1, 2, 3, 1, 3, 1},
-            {5, 6, 3, 1, 4, 1},
-            {5, 1, 2, 1, 3, 1}
+    // Seed with a real random value, if available
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> dist(1, 5); // Random costs between 1 and 5
+
+    // Initialize the 3D grid
+    vector<vector<vector<int>>> grid(layers, vector<vector<int>>(rows, vector<int>(cols)));
+
+    for (int l = 0; l < layers; ++l) {
+        for (int r = 0; r < rows; ++r) {
+            for (int c = 0; c < cols; ++c) {
+                grid[l][r][c] = dist(gen);
+            }
         }
-    };
+    }
 
     vector<vector<bool>> hasVia(rows, vector<bool>(cols, false));
-    hasVia[1][1] = true;
-    hasVia[2][2] = true;
-    hasVia[3][3] = true;
-    hasVia[4][4] = true;
+    for(int i=1;i<rows-1;i++){  
+        hasVia[i][i]=true;
+        hasVia[rows-1-i][i]=true;
+    }
 
     int n;
     cout << "Enter number of nets to route: ";
@@ -280,7 +272,7 @@ int main() {
     
         printGridLayers(bestLayout, layers);
 
-    cout << "\n✅ Routed " << bestRouted << " nets with total cost: " << minCost << "\n\n";
+    cout << "\n Routed " << bestRouted << " nets with total cost: " << minCost << "\n\n";
 
     return 0;
 }
