@@ -148,28 +148,28 @@ int main() {
 
     vector<vector<vector<int>>> grid = {
         {
-            {1, 2, 3, 4,5,1},
-            {3, 6, 5, 2,2,1},
-            {2, 1, 1, 7,6,3},
-            {1, 4, 2, 3,1,3},
-            {4, 1, 1, 9,6,1},
-            {1, 3, 4, 3,2,5}
+            {1, 2, 3, 4, 5, 1},
+            {3, 6, 5, 2, 2, 1},
+            {2, 1, 1, 7, 6, 3},
+            {1, 4, 2, 3, 1, 3},
+            {4, 1, 1, 9, 6, 1},
+            {1, 3, 4, 3, 2, 5}
         },
         {
-            {3, 2, 1, 4,3,5},
-            {1, 3, 1, 5,2,6},
-            {1, 4, 2, 1,1,2},
-            {2, 1, 1, 1,7,3},
-            {1, 4, 2, 1,3,2},
-            {1, 5, 6, 1,7,3}
+            {3, 2, 1, 4, 3, 5},
+            {1, 3, 1, 5, 2, 6},
+            {1, 4, 2, 1, 1, 2},
+            {2, 1, 1, 1, 7, 3},
+            {1, 4, 2, 1, 3, 2},
+            {1, 5, 6, 1, 7, 3}
         },
         {
-            {1, 4, 1, 1,3,1},
-            {2, 1, 2, 1,2,2},
-            {1, 1, 2, 1,4,1},
-            {1, 2, 3, 1,3,1},
-            {5, 6, 3, 1,4,1},
-            {5, 1, 2, 1,3,1}
+            {1, 4, 1, 1, 3, 1},
+            {2, 1, 2, 1, 2, 2},
+            {1, 1, 2, 1, 4, 1},
+            {1, 2, 3, 1, 3, 1},
+            {5, 6, 3, 1, 4, 1},
+            {5, 1, 2, 1, 3, 1}
         }
     };
 
@@ -184,24 +184,34 @@ int main() {
     cin >> n;
 
     vector<Net> nets;
-    for (int i = 0; i < n; ++i) {
+    int validNetCount = 0;
+    while (validNetCount < n) {
         int x1, y1, l1, x2, y2, l2;
-        cout << "Net " << i+1 << " Start (x y layer): ";
+        cout << "Net " << validNetCount + 1 << " Start (x y layer): ";
         cin >> x1 >> y1 >> l1;
-        cout << "Net " << i+1 << " Target (x y layer): ";
+        cout << "Net " << validNetCount + 1 << " Target (x y layer): ";
         cin >> x2 >> y2 >> l2;
 
-        if (!isValid(x1, y1, rows, cols) || !isValid(x2, y2, rows, cols) || l1 < 0 || l2 < 0 || l1 >= layers || l2 >= layers) {
-            cout << "Invalid net coordinates. Skipping...\n";
+        if (!isValid(x1, y1, rows, cols) || !isValid(x2, y2, rows, cols) ||
+            l1 < 0 || l2 < 0 || l1 >= layers || l2 >= layers) {
+            cout << "Invalid net coordinates. Please re-enter.\n";
             continue;
         }
 
         Net net;
-        net.name = "Net" + to_string(i + 1);
+        net.name = "Net" + to_string(validNetCount + 1);
         net.start = {x1, y1, l1};
         net.target = {x2, y2, l2};
         nets.push_back(net);
+        validNetCount++;
     }
+
+    struct RoutedNetInfo {
+        Net net;
+        vector<tuple<int, int, int>> path;
+        int cost;
+        char symbol;
+    };
 
     vector<int> indices(nets.size());
     for (int i = 0; i < indices.size(); ++i) indices[i] = i;
@@ -209,7 +219,7 @@ int main() {
     int bestRouted = -1;
     int minCost = INF;
     vector<vector<vector<char>>> bestLayout;
-    vector<Net> bestOrder;
+    vector<RoutedNetInfo> bestInfos;
 
     do {
         vector<vector<vector<bool>>> blocked(layers, vector<vector<bool>>(rows, vector<bool>(cols, false)));
@@ -217,7 +227,7 @@ int main() {
 
         int totalRoutingCost = 0;
         int routedNets = 0;
-        vector<Net> currentOrder;
+        vector<RoutedNetInfo> routedInfos;
 
         for (int idx = 0; idx < indices.size(); ++idx) {
             Net net = nets[indices[idx]];
@@ -228,33 +238,49 @@ int main() {
 
             int cost = computeTotalCost(path, grid);
             totalRoutingCost += cost;
-            currentOrder.push_back(net);
             routedNets++;
 
             for (auto [x, y, l] : path) {
                 blocked[l][x][y] = true;
                 layout[l][x][y] = symbol;
             }
+
+            RoutedNetInfo info;
+            info.net = net;
+            info.path = path;
+            info.cost = cost;
+            info.symbol = symbol;
+            routedInfos.push_back(info);
         }
 
-        // Check for better solution
         if (routedNets > bestRouted || (routedNets == bestRouted && totalRoutingCost < minCost)) {
             bestRouted = routedNets;
             minCost = totalRoutingCost;
             bestLayout = layout;
-            bestOrder = currentOrder;
+            bestInfos = routedInfos;
         }
 
     } while (next_permutation(indices.begin(), indices.end()));
 
-    // Final Output
-    printGridLayers(bestLayout, layers);
-    cout << "\n✅ Routed " << bestRouted << " nets with total cost: " << minCost << "\n";
-    cout << "Order of routing:\n";
-    for (const auto& net : bestOrder) {
-        cout << net.name << " ";
+    cout << "Best order of routing:\n";
+    for (const auto& info : bestInfos) {
+        cout << info.net.name << " ";
     }
     cout << "\n";
+    
+        for (const auto& info : bestInfos) {
+        cout << info.net.name << " routed with cost " << info.cost << " using symbol '" << info.symbol << "':\n";
+        for (size_t i = 0; i < info.path.size(); ++i) {
+            auto [x, y, l] = info.path[i];
+            cout << "(" << x << "," << y << ") [L" << l << "]";
+            if (i < info.path.size() - 1) cout << " -> ";
+        }
+        cout << " -> END\n\n";
+    }
+    
+        printGridLayers(bestLayout, layers);
+
+    cout << "\n✅ Routed " << bestRouted << " nets with total cost: " << minCost << "\n\n";
 
     return 0;
 }
