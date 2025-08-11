@@ -83,7 +83,7 @@ Layer 1:
 
 ## Future Scope
 
-- [ ] Optimized Routing Scheduler
+- [x] Optimized Routing Scheduler
   - Prioritize nets to maximize the number of successfully routed connections
   - Apply greedy heuristics or backtracking to reduce cost while maximizing routability
 
@@ -94,7 +94,7 @@ Layer 1:
 - [ ] Obstacle Modeling
   - Add user-defined obstacles and reserved areas within layers
 
-- [ ] Graphical Visualization
+- [x] Graphical Visualization
   - Interactive GUI or Web-based visualizer for better debugging
 
 - [ ] Routing Statistics Report
